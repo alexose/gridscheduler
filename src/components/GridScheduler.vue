@@ -1,4 +1,5 @@
 <script>
+    import {ref} from "vue";
     export default {
         name: "GridScheduler",
         props: {
@@ -58,6 +59,14 @@
                     this.highlight(key);
                 }
             },
+            async handleSubmit() {
+                const body = JSON.stringify(this.highlighted);
+                await fetch("/schedule", {
+                    method: "POST",
+                    body,
+                    headers: {"Content-Type": "application/json"},
+                });
+            },
             highlight(key) {
                 const o = this.highlighted;
                 const color = this.dragging;
@@ -101,7 +110,15 @@
                 days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
                 minutes: (60 * 24) / 5,
                 dragging: false,
-                highlighted: {},
+            };
+        },
+        async setup() {
+            const highlighted = ref({});
+            const str = await fetch("/schedule");
+            highlighted.value = JSON.parse(str);
+            console.log(highlighted);
+            return {
+                highlighted,
             };
         },
     };
@@ -131,6 +148,7 @@
                 @mouseover="handleMouseOver(`${day}-${minute}`)"
             ></div>
         </div>
+        <button @click="handleSubmit">Submit Schedule</button>
         <div class="grid-schedule-readout">
             <ul v-for="day in schedule" :key="`readout-day-${day}`">
                 <li v-for="(item, idx) in day" :key="`readout-item-${idx}`">{{ item }}</li>
