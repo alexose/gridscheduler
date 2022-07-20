@@ -5,31 +5,7 @@
         props: {
             items: Number,
         },
-        computed: {
-            schedule() {
-                const schedule = this.days.map(this.calculateSegments);
-                return schedule;
-            },
-        },
         methods: {
-            calculateSegments(str, day) {
-                const schedule = [];
-                let segment = null;
-                for (let i = 0; i <= this.minutes; i++) {
-                    const key = `${day}-${i}`;
-                    const zone = this.highlighted[key];
-
-                    if (segment && segment.zone === zone) {
-                        segment.time += 5;
-                    } else if (segment && segment.zone !== zone) {
-                        schedule.push(segment);
-                        segment = null;
-                    } else if (zone) {
-                        segment = {zone, time: 5, begin: this.getTime(i)};
-                    }
-                }
-                return schedule;
-            },
             getTime(i) {
                 // Work out locale time from increment
                 const totalMinutes = i * 5;
@@ -118,10 +94,13 @@
         },
         async setup() {
             const highlighted = ref({});
+            const schedule = ref({});
             const json = await fetch("/schedule").then(response => response.json());
-            highlighted.value = json;
+            highlighted.value = json.highlighted;
+            schedule.value = json.segments;
             return {
                 highlighted,
+                schedule,
             };
         },
     };

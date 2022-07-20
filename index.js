@@ -18,11 +18,13 @@ app.post("/schedule", (req, res) => {
     const str = JSON.stringify(obj);
     fs.writeFileSync(SCHEDULE_PATH, str);
     schedule = str;
-    const segments = DAYS.map((d, i) => calculateSegments(d, i, obj));
-    console.log(segments);
     res.send("ok");
 });
-app.get("/schedule", (req, res) => res.send(schedule));
+app.get("/schedule", (req, res) => {
+    const obj = JSON.parse(schedule);
+    const segments = DAYS.map((d, i) => calculateSegments(d, i, obj));
+    res.send({highlighted: obj, segments});
+});
 server.listen(port, () => console.log(`Server listening at http://localhost:${port}`));
 
 function calculateSegments(str, day, highlighted) {
