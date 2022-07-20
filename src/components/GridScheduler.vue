@@ -14,19 +14,20 @@
         methods: {
             calculateSegments(str, day) {
                 const schedule = [];
-                let previous = undefined;
+                let segment = null;
                 for (let i = 0; i <= this.minutes; i++) {
                     const key = `${day}-${i}`;
-                    const val = this.highlighted[key];
+                    const zone = this.highlighted[key];
 
-                    if (previous !== val) {
-                        if (previous) schedule.push(`Turn OFF zone ${previous} on ${str} at ${this.getTime(i)}`);
-                        if (val) schedule.push(`Turn ON zone ${val} on ${str} at ${this.getTime(i)}`);
+                    if (segment && segment.zone === zone) {
+                        segment.time += 5;
+                    } else if (segment && segment.zone !== zone) {
+                        schedule.push(segment);
+                        segment = null;
+                    } else if (zone) {
+                        segment = {zone, time: 5, begin: this.getTime(i)};
                     }
-
-                    previous = val;
                 }
-
                 return schedule;
             },
             getTime(i) {
@@ -66,6 +67,9 @@
                     body,
                     headers: {"Content-Type": "application/json"},
                 });
+            },
+            async handleClear() {
+                this.highlighted = {};
             },
             highlight(key) {
                 const o = this.highlighted;
@@ -114,9 +118,8 @@
         },
         async setup() {
             const highlighted = ref({});
-            const str = await fetch("/schedule");
-            highlighted.value = JSON.parse(str);
-            console.log(highlighted);
+            const json = await fetch("/schedule").then(response => response.json());
+            highlighted.value = json;
             return {
                 highlighted,
             };
@@ -141,14 +144,17 @@
             <label>{{ str }}:</label>
             <div
                 class="grid-schedule-minute"
-                :class="'color-' + (highlighted[`${day}-${minute}`] || 'none')"
+                :class="
+                    'color-' + (highlighted[`${day}-${minute}`] || 'none') + ((minute * 5) % 60 === 0 ? ' dark' : '')
+                "
                 v-for="minute in minutes"
                 :key="minute"
                 @mousedown.stop="handleMouseDown($event, `${day}-${minute}`)"
                 @mouseover="handleMouseOver(`${day}-${minute}`)"
             ></div>
         </div>
-        <button @click="handleSubmit">Submit Schedule</button>
+        <button @click="handleClear">Clear Schedule</button>
+        <button @click="handleSubmit">Save Schedule</button>
         <div class="grid-schedule-readout">
             <ul v-for="day in schedule" :key="`readout-day-${day}`">
                 <li v-for="(item, idx) in day" :key="`readout-item-${idx}`">{{ item }}</li>
@@ -182,10 +188,14 @@
     }
     .grid-schedule-header {
         background: none;
+        transform: translateX(-15px);
     }
     .grid-schedule-readout ul {
         padding: 0;
         list-style: none;
+    }
+    .dark {
+        filter: brightness(96%);
     }
     .color-1 {
         background: #ff6961;

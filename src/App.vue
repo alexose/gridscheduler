@@ -5,7 +5,12 @@
         five-minute intervals.
     </p>
     <hr class="spacer" />
-    <GridScheduler :items="8" />
+    <Suspense>
+        <template #default>
+            <GridScheduler :items="8" />
+        </template>
+        <template #fallback> Loading... </template>
+    </Suspense>
 </template>
 
 <script>
